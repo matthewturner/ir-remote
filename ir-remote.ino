@@ -1,36 +1,40 @@
-// Turn on
-// Protocol=NEC Data=0xFF00FF
+#include <IRremote.h>
 
-// Turn off
-// Protocol=NEC Data=0xFF40BF
-  
-#include <IRremote.h> //including infrared remote header file
+#define POWER_SWITCH 8
+#define EXTERNAL_POWER_MONITOR 12
 
-int RECV_PIN = 9; // the pin where you connect the output pin of IR sensor
-
-IRrecv irrecv(RECV_PIN);
-decode_results results;
-
+// sends on pin 3
 IRsend IrSender;
+bool turnedOn = false;
 
 void setup()
 {
     Serial.begin(9600);
-    // irrecv.enableIRIn();
+
+    pinMode(POWER_SWITCH, OUTPUT);
+    pinMode(EXTERNAL_POWER_MONITOR, INPUT);
+
+    digitalWrite(POWER_SWITCH, HIGH);
 }
 
 void loop()
 {
-    IrSender.sendNEC(0xFF00FF, 32);
-    delay(1000);
+    if (!turnedOn)
+    {
+        // turn on
+        IrSender.sendNEC(0xFF00FF, 32);
+        turnedOn = true;
+    }
 
-    // if (irrecv.decode(&results)) // Returns 0 if no data ready, 1 if data ready.
-    // {
-    //     // int results.value = results; // Results of decoding are stored in result.value
-    //     Serial.println(" ");
-    //     Serial.print("Code: ");
-    //     Serial.println(results.value); //prints the value a a button press
-    //     Serial.println(" ");
-    //     irrecv.resume(); // Restart the ISR state machine and Receive the next value
-    // }
+    if (digitalRead(EXTERNAL_POWER_MONITOR) == HIGH)
+    {
+        delay(1000);
+    }
+    else
+    {
+        // turn off
+        IrSender.sendNEC(0xFF40BF, 32);
+        delay(2000);
+        digitalWrite(POWER_SWITCH, LOW);
+    }
 }
