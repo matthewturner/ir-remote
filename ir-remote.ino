@@ -21,20 +21,29 @@ void loop()
 {
     if (!turnedOn)
     {
-        // turn on
+        Serial.println("Sending ON signal...");
         IrSender.sendNEC(0xFF00FF, 32);
         turnedOn = true;
     }
 
     if (digitalRead(EXTERNAL_POWER_MONITOR) == HIGH)
     {
+        Serial.println("External power detected");
         delay(1000);
     }
     else
     {
-        // turn off
+        Serial.println("External power loss detected");
+        
+        Serial.println("Sending OFF signal...");
         IrSender.sendNEC(0xFF40BF, 32);
+        
+        Serial.println("Powering down in 2 seconds...");
         delay(2000);
+        Serial.println("Powering down...");
         digitalWrite(POWER_SWITCH, LOW);
+        
+        Serial.println("Waiting for the end...");
+        delay(2000);
     }
 }
