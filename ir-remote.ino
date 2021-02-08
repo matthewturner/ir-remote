@@ -34,15 +34,15 @@ void loop()
     else
     {
         Serial.println("External power loss detected");
-        
+
         Serial.println("Sending OFF signal...");
         IrSender.sendNEC(0xFF40BF, 32);
-        
-        Serial.println("Powering down in 2 seconds...");
-        delay(2000);
+
+        Serial.println("Powering down in 7 seconds...");
+        delay(7000);
         Serial.println("Powering down...");
         digitalWrite(POWER_SWITCH, LOW);
-        
+
         Serial.println("Waiting for the end...");
         delay(2000);
     }
