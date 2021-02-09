@@ -14,36 +14,76 @@ void setup()
     pinMode(POWER_SWITCH, OUTPUT);
     pinMode(EXTERNAL_POWER_MONITOR, INPUT);
 
-    digitalWrite(POWER_SWITCH, HIGH);
+    enableBackupPower();
 }
 
 void loop()
 {
+    if (externalPowerConnected())
+    {
+        sendOnSignalIfRequired();
+        delay(1000);
+        return;
+    }
+
+    Serial.println("External power loss detected");
+    
+    sendOffSignal();
+    pauseBeforePowerDown();
+    disableBackupPower();
+    waitForEnd();
+    
+    // will reach here if power is resumed
+    enableBackupPower();
+}
+
+bool externalPowerConnected()
+{
+    return (digitalRead(EXTERNAL_POWER_MONITOR) == HIGH);
+}
+
+void sendOnSignalIfRequired()
+{
     if (!turnedOn)
     {
-        Serial.println("Sending ON signal...");
-        IrSender.sendNEC(0xFF00FF, 32);
-        turnedOn = true;
+        sendOnSignal();
     }
+}
 
-    if (digitalRead(EXTERNAL_POWER_MONITOR) == HIGH)
-    {
-        Serial.println("External power detected");
-        delay(1000);
-    }
-    else
-    {
-        Serial.println("External power loss detected");
+void pauseBeforePowerDown()
+{
+    Serial.println("Powering down in 1 seconds...");
+    delay(1000);
+}
 
-        Serial.println("Sending OFF signal...");
-        IrSender.sendNEC(0xFF40BF, 32);
+void disableBackupPower()
+{
+    Serial.println("Disabling backup power...");
+    digitalWrite(POWER_SWITCH, LOW);
+}
 
-        Serial.println("Powering down in 7 seconds...");
-        delay(7000);
-        Serial.println("Powering down...");
-        digitalWrite(POWER_SWITCH, LOW);
+void enableBackupPower()
+{
+    Serial.println("Enabling backup power...");
+    digitalWrite(POWER_SWITCH, HIGH);
+}
 
-        Serial.println("Waiting for the end...");
-        delay(2000);
-    }
+void sendOnSignal()
+{
+    Serial.println("Sending ON signal...");
+    IrSender.sendNEC(0xFF00FF, 32);
+    turnedOn = true;
+}
+
+void sendOffSignal()
+{
+    Serial.println("Sending OFF signal...");
+    IrSender.sendNEC(0xFF40BF, 32);
+    turnedOn = false;
+}
+
+void waitForEnd()
+{
+    Serial.println("Waiting for the end...");
+    delay(2000);
 }
