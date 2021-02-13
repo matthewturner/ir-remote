@@ -22,17 +22,17 @@ void loop()
     if (externalPowerConnected())
     {
         sendOnSignalIfRequired();
-        delay(1000);
+        delay(500);
         return;
     }
 
     Serial.println("External power loss detected");
-    
+
     sendOffSignal();
     pauseBeforePowerDown();
     disableBackupPower();
     waitForEnd();
-    
+
     // will reach here if power is resumed
     enableBackupPower();
 }
@@ -71,14 +71,22 @@ void enableBackupPower()
 void sendOnSignal()
 {
     Serial.println("Sending ON signal...");
-    IrSender.sendNEC(0xFF00FF, 32);
+    for (byte i = 0; i < 3; i++)
+    {
+        IrSender.sendNEC(0xFF00FF, 32);
+        delay(300);
+    }
     turnedOn = true;
 }
 
 void sendOffSignal()
 {
     Serial.println("Sending OFF signal...");
-    IrSender.sendNEC(0xFF40BF, 32);
+    for (byte i = 0; i < 3; i++)
+    {
+        IrSender.sendNEC(0xFF40BF, 32);
+        delay(300);
+    }
     turnedOn = false;
 }
 
