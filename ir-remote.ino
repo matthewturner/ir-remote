@@ -1,11 +1,17 @@
+#include <LowPower.h>
 #include <IRremote.h>
 
-#define POWER_SWITCH 8
-#define EXTERNAL_POWER_MONITOR 12
+const byte POWER_SWITCH = 8;
+const byte EXTERNAL_POWER_MONITOR = 2;
+
+const byte POWERING_UP = 0;
+const byte WAITING = 1;
+const byte POWERING_DOWN = 2;
+const byte POWERED_DOWN = 3;
+volatile byte state = 0;
 
 // sends on pin 3
 IRsend IrSender;
-bool turnedOn = false;
 
 void setup()
 {
@@ -14,27 +20,53 @@ void setup()
     pinMode(POWER_SWITCH, OUTPUT);
     pinMode(EXTERNAL_POWER_MONITOR, INPUT);
 
+    attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), wakeup, LOW);
+
     enableBackupPower();
+
+    Serial.println(F("Setup complete. Continuing..."));
 }
 
 void loop()
 {
-    if (externalPowerConnected())
-    {
-        sendOnSignalIfRequired();
-        delay(500);
-        return;
-    }
+  if (!externalPowerConnected())
+  {
+    wakeup();
+  }
+  
+  switch(state)
+  {
+    case POWERING_UP:
+      sendOnSignal();
+      break;
+    case WAITING:
+      sleep();
+      break;
+    case POWERING_DOWN:
+      sendOffSignal();
+      disableBackupPower();
+      break;
+    case POWERED_DOWN:
+      waitForEnd();
+      break;
+  }
+}
 
-    Serial.println("External power loss detected");
+void wakeup()
+{
+  if (state == WAITING)
+  {
+    setState(POWERING_DOWN);
+  }
+}
 
-    sendOffSignal();
-    pauseBeforePowerDown();
-    disableBackupPower();
-    waitForEnd();
-
-    // will reach here if power is resumed
-    enableBackupPower();
+bool sleep()
+{
+  Serial.println(F("Sleeping..."));
+  Serial.flush();
+  LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+                SPI_OFF, USART0_OFF, TWI_OFF);
+  return true;
 }
 
 bool externalPowerConnected()
@@ -42,56 +74,72 @@ bool externalPowerConnected()
     return (digitalRead(EXTERNAL_POWER_MONITOR) == HIGH);
 }
 
-void sendOnSignalIfRequired()
-{
-    if (!turnedOn)
-    {
-        sendOnSignal();
-    }
-}
-
-void pauseBeforePowerDown()
-{
-    Serial.println("Powering down in 1 seconds...");
-    delay(1000);
-}
-
 void disableBackupPower()
 {
-    Serial.println("Disabling backup power...");
+    Serial.println(F("Disabling backup power..."));
     digitalWrite(POWER_SWITCH, LOW);
+    setState(POWERED_DOWN);
 }
 
 void enableBackupPower()
 {
-    Serial.println("Enabling backup power...");
+    Serial.println(F("Enabling backup power..."));
     digitalWrite(POWER_SWITCH, HIGH);
+    setState(POWERING_UP);
 }
 
 void sendOnSignal()
 {
-    Serial.println("Sending ON signal...");
+    Serial.println(F("Sending ON signal..."));
     for (byte i = 0; i < 3; i++)
     {
         IrSender.sendNEC(0xFF00FF, 32);
         delay(300);
     }
-    turnedOn = true;
+    setState(WAITING);
 }
 
 void sendOffSignal()
 {
-    Serial.println("Sending OFF signal...");
+    Serial.println(F("Sending OFF signal..."));
     for (byte i = 0; i < 3; i++)
     {
         IrSender.sendNEC(0xFF40BF, 32);
         delay(300);
     }
-    turnedOn = false;
+    setState(POWERING_DOWN);
 }
 
 void waitForEnd()
 {
-    Serial.println("Waiting for the end...");
-    delay(2000);
+    if (externalPowerConnected())
+    {
+      enableBackupPower();
+    }
+    else
+    {
+      Serial.println(F("Waiting for the end..."));
+      delay(500); 
+    }
+}
+
+void setState(byte newState)
+{
+  Serial.print(F("Setting state: "));
+  switch (newState)
+  {
+  case POWERING_UP:
+    Serial.println(F("POWERING_UP"));
+    break;
+  case WAITING:
+    Serial.println(F("WAITING"));
+    break;
+  case POWERING_DOWN:
+    Serial.println(F("POWERING_DOWN"));
+    break;
+  case POWERED_DOWN:
+    Serial.println(F("POWERED_DOWN"));
+    break;
+  }
+  state = newState;
 }
