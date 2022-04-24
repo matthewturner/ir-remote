@@ -29,11 +29,6 @@ void setup()
 
 void loop()
 {
-  if (!externalPowerConnected())
-  {
-    wakeup();
-  }
-  
   switch(state)
   {
     case POWERING_UP:
@@ -64,7 +59,7 @@ bool sleep()
 {
   Serial.println(F("Sleeping..."));
   Serial.flush();
-  LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
+  LowPower.idle(SLEEP_FOREVER, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
                 SPI_OFF, USART0_OFF, TWI_OFF);
   return true;
 }
