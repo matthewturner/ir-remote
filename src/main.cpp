@@ -9,44 +9,35 @@ void setup()
 
   attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), wakeup, LOW);
 
+  stateMachine.addState(POWERING_UP, (EvtAction)powerUp, WAITING);
+  stateMachine.addState(WAITING, (EvtAction)sleep, WAITING);
+  stateMachine.addState(POWERING_DOWN, (EvtAction)powerDown, POWERED_DOWN);
+  stateMachine.addState(POWERED_DOWN, (EvtAction)poweredDown, POWERED_DOWN, POWERING_UP);
+
+  mgr.addListener(&stateMachine);
+
   Serial.println(F("Setup complete. Continuing..."));
 }
 
-void loop()
+bool powerUp()
 {
-  switch (state)
-  {
-  case POWERING_UP:
-    enableBackupPower();
-    sendOnSignal();
-    setState(WAITING);
-    break;
-  case WAITING:
-    sleep();
-    break;
-  case POWERING_DOWN:
-    sendOffSignal();
-    disableBackupPower();
-    setState(POWERED_DOWN);
-    break;
-  case POWERED_DOWN:
-    if (externalPowerConnected())
-    {
-      setState(POWERING_UP);
-    }
-    else
-    {
-      waitForEnd();
-    }
-    break;
-  }
+  enableBackupPower();
+  sendOnSignal();
+  return true;
+}
+
+bool powerDown()
+{
+  sendOffSignal();
+  disableBackupPower();
+  return true;
 }
 
 void wakeup()
 {
-  if (state == WAITING)
+  if (stateMachine.currentState() == WAITING)
   {
-    setState(POWERING_DOWN);
+    stateMachine.setState(POWERING_DOWN);
   }
 }
 
@@ -81,7 +72,7 @@ void sendOnSignal()
   Serial.println(F("Sending ON signal..."));
   for (byte i = 0; i < 3; i++)
   {
-    IrSender.sendNEC(0xFF00FF, 32);
+    // IrSender.sendNEC(0xFF00FF, 32);
     delay(300);
   }
 }
@@ -91,34 +82,24 @@ void sendOffSignal()
   Serial.println(F("Sending OFF signal..."));
   for (byte i = 0; i < 3; i++)
   {
-    IrSender.sendNEC(0xFF40BF, 32);
+    // IrSender.sendNEC(0xFF40BF, 32);
     delay(300);
   }
 }
 
-void waitForEnd()
+bool poweredDown()
 {
+  if (externalPowerConnected())
+  {
+    return false;
+  }
+
   Serial.println(F("Waiting for the end..."));
   delay(500);
+  return true;
 }
 
-void setState(byte newState)
+void loop()
 {
-  Serial.print(F("Setting state: "));
-  switch (newState)
-  {
-  case POWERING_UP:
-    Serial.println(F("POWERING_UP"));
-    break;
-  case WAITING:
-    Serial.println(F("WAITING"));
-    break;
-  case POWERING_DOWN:
-    Serial.println(F("POWERING_DOWN"));
-    break;
-  case POWERED_DOWN:
-    Serial.println(F("POWERED_DOWN"));
-    break;
-  }
-  state = newState;
+  mgr.loopIteration();
 }
