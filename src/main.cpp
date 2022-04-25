@@ -40,8 +40,6 @@ void loop()
     }
     break;
   }
-
-  delay(500);
 }
 
 void wakeup()
@@ -83,7 +81,7 @@ void sendOnSignal()
   Serial.println(F("Sending ON signal..."));
   for (byte i = 0; i < 3; i++)
   {
-    // IrSender.sendNEC(0xFF00FF, 32);
+    IrSender.sendNEC(0xFF00FF, 32);
     delay(300);
   }
 }
@@ -93,7 +91,7 @@ void sendOffSignal()
   Serial.println(F("Sending OFF signal..."));
   for (byte i = 0; i < 3; i++)
   {
-    // IrSender.sendNEC(0xFF40BF, 32);
+    IrSender.sendNEC(0xFF40BF, 32);
     delay(300);
   }
 }
