@@ -25,4 +25,4 @@ void sendOffSignal();
 bool powerUp();
 bool powerDown();
 bool poweredDown();
-void wakeup();
+void onInterrupt();

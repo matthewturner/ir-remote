@@ -7,12 +7,13 @@ void setup()
   pinMode(POWER_SWITCH, OUTPUT);
   pinMode(EXTERNAL_POWER_MONITOR, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), wakeup, LOW);
+  attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), onInterrupt, LOW);
 
-  stateMachine.addState(POWERING_UP, (EvtAction)powerUp, WAITING);
-  stateMachine.addState(WAITING, (EvtAction)sleep, WAITING);
-  stateMachine.addState(POWERING_DOWN, (EvtAction)powerDown, POWERED_DOWN);
-  stateMachine.addState(POWERED_DOWN, (EvtAction)poweredDown, POWERED_DOWN, POWERING_UP);
+  stateMachine.when(POWERING_UP, (EvtAction)powerUp, WAITING);
+  stateMachine.when(WAITING, (EvtAction)sleep);
+  stateMachine.when(POWERING_DOWN, (EvtAction)powerDown, POWERED_DOWN);
+  stateMachine.when(POWERED_DOWN, (EvtAction)poweredDown, POWERED_DOWN, POWERING_UP);
+  stateMachine.whenInterrupted(WAITING, POWERING_DOWN);
 
   mgr.addListener(&stateMachine);
 
@@ -31,14 +32,6 @@ bool powerDown()
   sendOffSignal();
   disableBackupPower();
   return true;
-}
-
-void wakeup()
-{
-  if (stateMachine.currentState() == WAITING)
-  {
-    stateMachine.setState(POWERING_DOWN);
-  }
 }
 
 bool sleep()
@@ -102,4 +95,9 @@ bool poweredDown()
 void loop()
 {
   mgr.loopIteration();
+}
+
+void onInterrupt()
+{
+  stateMachine.onInterrupt();
 }
