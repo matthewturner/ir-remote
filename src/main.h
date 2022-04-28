@@ -16,13 +16,13 @@ IRsend IrSender;
 EvtManager mgr;
 StateMachineListener stateMachine;
 
-bool sleep();
+bool waiting();
 bool externalPowerConnected();
 void disableBackupPower();
 void enableBackupPower();
 void sendOnSignal();
 void sendOffSignal();
-bool powerUp();
-bool powerDown();
+bool poweringUp();
+bool poweringDown();
 bool poweredDown();
 void onInterrupt();

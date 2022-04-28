@@ -9,9 +9,9 @@ void setup()
 
   attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), onInterrupt, LOW);
 
-  stateMachine.when(POWERING_UP, (EvtAction)powerUp, WAITING);
-  stateMachine.when(WAITING, (EvtAction)sleep);
-  stateMachine.when(POWERING_DOWN, (EvtAction)powerDown, POWERED_DOWN);
+  stateMachine.when(POWERING_UP, (EvtAction)poweringUp, WAITING);
+  stateMachine.when(WAITING, (EvtAction)waiting);
+  stateMachine.when(POWERING_DOWN, (EvtAction)poweringDown, POWERED_DOWN);
   stateMachine.when(POWERED_DOWN, (EvtAction)poweredDown, NO_TRANSITION, POWERING_UP, 500);
   stateMachine.whenInterrupted(WAITING, POWERING_DOWN);
 
@@ -20,21 +20,21 @@ void setup()
   Serial.println(F("Setup complete. Continuing..."));
 }
 
-bool powerUp()
+bool poweringUp()
 {
   enableBackupPower();
   sendOnSignal();
   return true;
 }
 
-bool powerDown()
+bool poweringDown()
 {
   sendOffSignal();
   disableBackupPower();
   return true;
 }
 
-bool sleep()
+bool waiting()
 {
   Serial.println(F("Sleeping..."));
   Serial.flush();
