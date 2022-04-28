@@ -7,7 +7,7 @@ void setup()
   pinMode(POWER_SWITCH, OUTPUT);
   pinMode(EXTERNAL_POWER_MONITOR, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), onInterrupt, LOW);
+  attachInterrupt(digitalPinToInterrupt(EXTERNAL_POWER_MONITOR), onInterrupt, FALLING);
 
   stateMachine.when(POWERING_UP, (EvtAction)poweringUp, WAITING);
   stateMachine.when(WAITING, (EvtAction)waiting);
