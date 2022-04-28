@@ -12,7 +12,7 @@ void setup()
   stateMachine.when(POWERING_UP, (EvtAction)powerUp, WAITING);
   stateMachine.when(WAITING, (EvtAction)sleep);
   stateMachine.when(POWERING_DOWN, (EvtAction)powerDown, POWERED_DOWN);
-  stateMachine.when(POWERED_DOWN, (EvtAction)poweredDown, POWERED_DOWN, POWERING_UP);
+  stateMachine.when(POWERED_DOWN, (EvtAction)poweredDown, NO_TRANSITION, POWERING_UP, 500);
   stateMachine.whenInterrupted(WAITING, POWERING_DOWN);
 
   mgr.addListener(&stateMachine);
@@ -88,7 +88,6 @@ bool poweredDown()
   }
 
   Serial.println(F("Waiting for the end..."));
-  delay(500);
   return true;
 }
 
